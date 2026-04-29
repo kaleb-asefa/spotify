@@ -1,42 +1,44 @@
-# Spotify Personal Listening Analytics Dashboard
+# Spotify Analytics Studio (React + Python API)
 
-A complete end-to-end, portfolio-quality data analytics dashboard built with Python and Streamlit using exported Spotify JSON listening history.
+A modern split-stack Spotify analytics project with:
 
-## Features
+- React frontend (Vite) for advanced UI and chart-rich interaction
+- FastAPI backend for loading, filtering, and aggregating Spotify history data
+- Shared Python analytics utilities reused from the original project
 
-- Robust loading of multiple Spotify JSON files from `data/`
-- Dedicated preprocessing pipeline with feature engineering and sessionization
-- Executive KPI overview with listening behavior summaries
-- Listening trends: daily, weekly, monthly, yearly, rolling average, cumulative analysis
-- Artist and track intelligence with diversity scoring and repeated-play discovery
-- Behavior analytics from start/end reasons, shuffle, skip, offline, incognito, and platform fields
-- Time pattern intelligence including interactive heatmaps and seasonality
-- Statistical insights with confidence intervals, anomaly detection, and hypothesis testing
-- Machine learning section: skip probability prediction via logistic regression
-- Spotify Web API enrichment for album covers, artist images, genres, popularity, release dates, and Spotify links
-- Spotify Wrapped style visual sections: Featured Song Obsession, Top Albums Spotlight, Artist Spotlight, and narrative insight cards
-
-## Project Structure
+## Architecture
 
 ```text
 spotify_dashboard/
-├── app.py
-├── pages/
-├── utils/
-│   ├── loader.py
-│   ├── preprocessing.py
-│   ├── plots.py
-│   └── stats.py
-├── data/
-├── models/
-├── assets/
+├── backend/
+│   └── main.py                 # FastAPI analytics API
+├── frontend/
+│   ├── package.json
+│   └── src/
+│       ├── App.jsx
+│       ├── api.js
+│       ├── styles.css
+│       └── components/
+├── data/                       # Place Spotify JSON exports here
+├── utils/                      # Reused preprocessing/loading utilities
+├── app.py                      # Legacy Streamlit app (optional)
 ├── requirements.txt
 └── README.md
 ```
 
-## Data Input Format
+## API Endpoints
 
-The app expects Spotify export JSON records containing fields such as:
+- `GET /health`
+- `GET /api/options`
+- `GET /api/dashboard?start_date=...&end_date=...&artists=...&content_types=...`
+
+`artists` and `content_types` are comma-separated values.
+
+## Data Input
+
+Place one or more Spotify JSON history exports in `data/`.
+
+Expected fields include common Spotify export keys such as:
 
 - `ts`
 - `ms_played`
@@ -47,48 +49,51 @@ The app expects Spotify export JSON records containing fields such as:
 - `reason_end`
 - `shuffle`
 - `skipped`
-- `offline`
-- `incognito_mode`
-
-and related podcast/audiobook fields.
 
 ## Quickstart
 
-1. Create and activate a Python environment.
-2. Install dependencies:
+### 1) Start the Python backend
 
 ```bash
 pip install -r requirements.txt
+uvicorn backend.main:app --reload --port 8000
 ```
 
-3. Place your Spotify JSON export files inside `data/`.
-4. (Optional but recommended) add Spotify API credentials.
-
-Create `.streamlit/secrets.toml`:
-
-```toml
-SPOTIFY_CLIENT_ID = "your_client_id"
-SPOTIFY_CLIENT_SECRET = "your_client_secret"
-```
-
-5. Run the app:
+### 2) Start the React frontend
 
 ```bash
-streamlit run app.py
+cd frontend
+npm install
+npm run dev
 ```
 
-## Portfolio Positioning
+Frontend runs on `http://localhost:5173` and calls the backend at `http://127.0.0.1:8000` by default.
 
-This project demonstrates:
+## Spotify Images (Artists + Albums)
 
-- data cleaning and data quality handling
-- exploratory data analysis and dashboard storytelling
-- inferential statistics (CI, z-score anomalies, hypothesis testing)
-- machine learning workflow and model interpretation
-- production-style modular Python architecture
+The backend enriches `topArtists` and `favoriteAlbums` with image URLs.
+
+- Primary source: Spotify Web API (requires credentials)
+- Fallback source: Deezer public search API (no credentials required)
+
+Set these environment variables before starting the backend:
+
+```bash
+export SPOTIFY_CLIENT_ID=your_client_id
+export SPOTIFY_CLIENT_SECRET=your_client_secret
+```
+
+If credentials are not set, the backend uses Deezer as fallback. If neither provider returns a match, the frontend renders fallback placeholders.
+
+## Optional Frontend Environment Variable
+
+If your backend is hosted elsewhere, set:
+
+```bash
+VITE_API_BASE_URL=http://your-api-host:8000
+```
 
 ## Notes
 
-- For best results, include multiple months of listening history.
-- The ML section requires enough song rows and both skipped/non-skipped examples.
-- Without Spotify credentials, the dashboard still runs using listening-history-only analytics, with image/metadata fallbacks.
+- CORS is enabled in the backend for local development.
+- The original Streamlit app is kept for reference in `app.py`.
